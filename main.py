@@ -18,7 +18,14 @@ def yuklab_olish(message):
         opts = {
             'format': 'best',
             'outtmpl': fayl_nomi,
-            'cookiefile': 'cookies_youtube.txt'
+            'cookies': 'cookies_youtube.txt',  # cookies fayli shu nomda va joyda bo‘lishi kerak
+            'nocheckcertificate': True,
+            'quiet': True,
+            'no_warnings': True,
+            'ignoreerrors': True,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+            }
         }
 
         with yt_dlp.YoutubeDL(opts) as ydl:
@@ -30,6 +37,6 @@ def yuklab_olish(message):
         os.remove(fayl_nomi)
 
     except Exception as e:
-        bot.reply_to(message, f"Xatolik: {e}")
+        bot.reply_to(message, f"Xatolik yuz berdi: {e}")
 
 bot.polling()
