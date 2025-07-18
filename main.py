@@ -18,9 +18,7 @@ def yuklab_olish(message):
         opts = {
             'format': 'best',
             'outtmpl': fayl_nomi,
-            'cookiefile': 'cookies_youtube.txt',
-            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
-            'force_extractors': ['youtube:tab'],  # bu yerda extractor ni majburan o‘zgartiramiz
+            'cookiefile': 'cookies_youtube.txt'
 }
         }
 
