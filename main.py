@@ -4,6 +4,14 @@ import os
 
 bot = telebot.TeleBot("7289724171:AAE5JjM2vDYMoI9voC92tdqVuX97y4hB1z0")
 
+opts = {
+    'format': 'best',
+    'outtmpl': fayl_nomi,
+    'cookiesfrombrowser': ('chrome',),
+    'cookiefile': 'cookies_youtube.json',
+}
+
+
 @bot.message_handler(commands=['start'])
 def boshlash(message):
     bot.reply_to(message, "Salom! YouTube videosining linkini yuboring.")
