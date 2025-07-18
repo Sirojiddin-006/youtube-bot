@@ -19,7 +19,6 @@ def yuklab_olish(message):
             'format': 'best',
             'outtmpl': fayl_nomi,
             'cookiefile': 'cookies_youtube.txt'
-}
         }
 
         with yt_dlp.YoutubeDL(opts) as ydl:
