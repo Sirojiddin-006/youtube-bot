@@ -13,28 +13,29 @@ def yuklab_olish(message):
     url = message.text
     bot.reply_to(message, "Video yuklanmoqda... biroz kuting.")
 
-    try:
-        fayl_nomi = "video.mp4"
-        opts = {
-            'format': 'best',
-            'outtmpl': fayl_nomi,
-            'cookies': 'cookies_youtube.txt',  # cookies fayli shu nomda va joyda bo‘lishi kerak
-            'nocheckcertificate': True,
-            'quiet': True,
-            'no_warnings': True,
-            'ignoreerrors': True,
-            'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-            }
+    fayl_nomi = "video.mp4"
+    opts = {
+        'format': 'best',
+        'outtmpl': fayl_nomi,
+        'cookies': 'cookies_youtube.txt',  # to'g'ri joyda ekanligiga ishonch hosil qiling
+        'nocheckcertificate': True,
+        'ignoreerrors': True,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
         }
+    }
 
+    try:
         with yt_dlp.YoutubeDL(opts) as ydl:
-            ydl.download([url])
+            info = ydl.extract_info(url, download=True)
 
-        with open(fayl_nomi, 'rb') as video:
-            bot.send_video(message.chat.id, video)
-
-        os.remove(fayl_nomi)
+        # Fayl borligini tekshirish
+        if os.path.exists(fayl_nomi):
+            with open(fayl_nomi, 'rb') as video:
+                bot.send_video(message.chat.id, video)
+            os.remove(fayl_nomi)
+        else:
+            bot.reply_to(message, "Video yuklab olinmadi yoki fayl topilmadi.")
 
     except Exception as e:
         bot.reply_to(message, f"Xatolik yuz berdi: {e}")
