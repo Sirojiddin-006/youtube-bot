@@ -18,7 +18,7 @@ def yuklab_olish(message):
         opts = {
             'format': 'best',
             'outtmpl': fayl_nomi,
-            'cookiefile': 'cookies_youtube.json'
+            'cookiefile': 'cookies_youtube.txt'
         }
 
         with yt_dlp.YoutubeDL(opts) as ydl:
