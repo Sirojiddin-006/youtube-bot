@@ -1,55 +1,49 @@
 import telebot
 import yt_dlp
 import os
+import re
 
-bot = telebot.TeleBot('7289724171:AAE5JjM2vDYMoI9voC92tdqVuX97y4hB1z0')
+TOKEN = '7289724171:AAE5JjM2vDYMoI9voC92tdqVuX97y4hB1z0'
+bot = telebot.TeleBot(TOKEN)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(message.chat.id, "YouTube Shorts havolasini yuboring:")
+    bot.send_message(message.chat.id, "🎬 Menga YouTube havolasini yuboring (shorts ham bo'ladi). Men uni sifatli yuklab beraman.")
 
-@bot.message_handler(func=lambda msg: True)
+def to_main_url(url):
+    if 'youtube.com/shorts/' in url:
+        return re.sub(r'youtube\.com/shorts/([a-zA-Z0-9_-]+)', r'youtube.com/watch?v=\1', url)
+    if 'youtu.be/' in url:
+        return re.sub(r'youtu\.be/([a-zA-Z0-9_-]+)', r'youtube.com/watch?v=\1', url)
+    return url
+
+@bot.message_handler(func=lambda m: 'youtube.com' in m.text or 'youtu.be' in m.text)
 def download_video(message):
-    link = message.text.strip()
+    url = message.text.strip()
+    url = to_main_url(url)
 
-    # Faqat YouTube Shorts havolalarini tekshiramiz
-    if "youtube.com/shorts/" in link or "youtu.be/" in link:
-        # Havolani to‘liq video formatga o‘zgartiramiz
-        if "shorts" in link:
-            video_id = link.split("/shorts/")[1].split("?")[0]
-        elif "youtu.be/" in link:
-            video_id = link.split("youtu.be/")[1].split("?")[0]
-        else:
-            bot.send_message(message.chat.id, "Noto‘g‘ri havola.")
-            return
+    bot.send_message(message.chat.id, "⏳ Yuklanmoqda...")
 
-        video_url = f"https://www.youtube.com/watch?v={video_id}"
+    fayl_nomi = "video.mp4"
 
-        bot.send_message(message.chat.id, "Video yuklanmoqda...")
+    opts = {
+        'outtmpl': fayl_nomi,
+        'format': 'bestvideo+bestaudio/best',
+        'cookies': 'cookies_youtube.txt',
+        'quiet': True,
+        'merge_output_format': 'mp4'
+    }
 
-        # Fayl nomi
-        filename = f"{video_id}.mp4"
+    try:
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            ydl.download([url])
 
-        # Eng sifatli versiyasini yuklab olish uchun sozlamalar
-        ydl_opts = {
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4',
-            'outtmpl': filename,
-            'quiet': True,
-            'merge_output_format': 'mp4',
-        }
+        with open(fayl_nomi, 'rb') as video:
+            bot.send_video(message.chat.id, video)
 
-        try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([video_url])
+        os.remove(fayl_nomi)
 
-            with open(filename, 'rb') as video_file:
-                bot.send_video(message.chat.id, video_file)
-
-            os.remove(filename)
-
-        except Exception as e:
-            bot.send_message(message.chat.id, f"Xatolik yuz berdi: {str(e)}")
-    else:
-        bot.send_message(message.chat.id, "Faqat YouTube Shorts havolasi yuboring.")
+    except Exception as e:
+        bot.send_message(message.chat.id, f"❌ Xatolik yuz berdi: {e}")
 
 bot.polling()
