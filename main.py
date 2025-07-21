@@ -1,43 +1,44 @@
 import telebot
 import yt_dlp
 import os
+import uuid
 
-# Tokeningizni shu yerga yozing
-bot = telebot.TeleBot("7289724171:AAE5JjM2vDYMoI9voC92tdqVuX97y4hB1z0")
+BOT_TOKEN = '7289724171:AAE5JjM2vDYMoI9voC92tdqVuX97y4hB1z0'
+bot = telebot.TeleBot(BOT_TOKEN)
 
 @bot.message_handler(commands=['start'])
-def send_welcome(message):
-    bot.reply_to(message, "YouTube link yuboring, video yuklab beraman.")
+def start(message):
+    bot.reply_to(message, "YouTube havolasini yuboring, men uni sizga video ko'rinishida yuboraman.")
 
 @bot.message_handler(func=lambda message: True)
-def download_video(message):
-    url = message.text
+def download_youtube_video(message):
+    url = message.text.strip()
 
-    if "youtube.com" not in url and "youtu.be" not in url:
-        bot.reply_to(message, "Iltimos, to‘g‘ri YouTube havolasini yuboring.")
+    if not ("youtube.com" in url or "youtu.be" in url):
+        bot.reply_to(message, "Iltimos, faqat YouTube havolasini yuboring.")
         return
 
-    bot.reply_to(message, "⏳ Yuklanmoqda, kuting...")
+    bot.reply_to(message, "Videoni yuklab olayapman, biroz kuting...")
 
+    fayl_nomi = f"{uuid.uuid4()}.mp4"
     try:
-        output_file = "video.mp4"
-
-        ydl_opts = {
-            'outtmpl': output_file,
-            'cookies': 'cookies_youtube.txt',  # Cookie fayl yo'li
-            'format': 'bestvideo+bestaudio/best',
-            'merge_output_format': 'mp4',
+        opts = {
+            'format': 'best[ext=mp4]/best',
+            'outtmpl': fayl_nomi,
+            'cookiefile': 'cookies_youtube.txt'  # Agar fayldan olishni istasangiz
         }
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        with yt_dlp.YoutubeDL(opts) as ydl:
             ydl.download([url])
 
-        with open(output_file, 'rb') as video:
+        with open(fayl_nomi, 'rb') as video:
             bot.send_video(message.chat.id, video)
 
-        os.remove(output_file)
-
     except Exception as e:
-        bot.reply_to(message, f"❌ Xatolik yuz berdi:\n{str(e)}")
+        bot.reply_to(message, f"Xatolik yuz berdi: {str(e)}")
 
-bot.polling()
+    finally:
+        if os.path.exists(fayl_nomi):
+            os.remove(fayl_nomi)
+
+bot.infinity_polling()
