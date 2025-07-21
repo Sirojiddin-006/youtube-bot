@@ -1,62 +1,40 @@
 import telebot
 import requests
-from bs4 import BeautifulSoup
 import os
 
-BOT_TOKEN = '7289724171:AAE5JjM2vDYMoI9voC92tdqVuX97y4hB1z0'  # <-- O'zingizning Telegram bot tokenini yozing
-bot = telebot.TeleBot(BOT_TOKEN)
+TOKEN = "7289724171:AAE5JjM2vDYMoI9voC92tdqVuX97y4hB1z0"
+API_BASE = "https://youtube-download-api.matheusishiyama.repl.co"
+bot = telebot.TeleBot(TOKEN)
 
 @bot.message_handler(commands=['start'])
-def start(message):
-    bot.reply_to(message, "YouTube havolasini yuboring (https://youtube.com/...)")
+def start(msg):
+    bot.send_message(msg.chat.id,
+        "Salom! YouTube video linkini yuboring — men uni MP4 formatida qaytaraman."
+    )
+
+@bot.message_handler(func=lambda m: "youtu.be/" in m.text or "youtube.com/watch" in m.text)
+def video_handler(msg):
+    url = msg.text.strip()
+    bot.send_message(msg.chat.id, "⏳ Yuklanmoqda…")
+    try:
+        resp = requests.get(f"{API_BASE}/mp4/", params={"url": url}, stream=True, timeout=120)
+        resp.raise_for_status()
+
+        filename = "video.mp4"
+        with open(filename, "wb") as f:
+            for chunk in resp.iter_content(1024*1024):
+                if chunk:
+                    f.write(chunk)
+
+        with open(filename, "rb") as f:
+            bot.send_video(msg.chat.id, f)
+
+        os.remove(filename)
+    except Exception as e:
+        bot.send_message(msg.chat.id, f"❌ Xatolik bo‘ldi: {e}")
 
 @bot.message_handler(func=lambda m: True)
-def download_video(message):
-    url = message.text.strip()
-    if not url.startswith("https://youtube.com") and not url.startswith("https://www.youtube.com") and not url.startswith("https://youtu.be"):
-        bot.reply_to(message, "❌ Bu YouTube havolasi emas.")
-        return
-
-    savefrom_url = convert_to_savefrom_url(url)
-    bot.send_message(message.chat.id, "⏳ Video yuklab olinmoqda...")
-
-    try:
-        download_link = extract_download_link(savefrom_url)
-        if download_link:
-            video_data = requests.get(download_link, stream=True)
-            filename = "video.mp4"
-            with open(filename, "wb") as f:
-                for chunk in video_data.iter_content(chunk_size=1024*1024):
-                    if chunk:
-                        f.write(chunk)
-            with open(filename, "rb") as video_file:
-                bot.send_video(message.chat.id, video_file)
-            os.remove(filename)
-        else:
-            bot.send_message(message.chat.id, "❌ Yuklab olish havolasi topilmadi.")
-    except Exception as e:
-        bot.send_message(message.chat.id, f"❌ Xatolik yuz berdi:\n{str(e)}")
-
-def convert_to_savefrom_url(youtube_url):
-    if "youtu.be/" in youtube_url:
-        video_id = youtube_url.split("/")[-1]
-        return f"https://ssyoutube.com/watch?v={video_id}"
-    elif "watch?v=" in youtube_url:
-        return youtube_url.replace("youtube.com", "ssyoutube.com")
-    else:
-        return youtube_url
-
-def extract_download_link(savefrom_url):
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
-    response = requests.get(savefrom_url, headers=headers)
-    soup = BeautifulSoup(response.text, "html.parser")
-    
-    # SaveFrom direct download links are inside <a> with "download-link" class or similar
-    link = soup.find("a", href=True)
-    if link and link["href"].startswith("https://"):
-        return link["href"]
-    return None
+def fallback(msg):
+    bot.reply_to(msg, "❗ Iltimos, faqat YouTube havolasini yuboring.")
 
 bot.polling()
